@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, Form
+from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from routes import auth_router, register_user, login
@@ -6,7 +6,7 @@ from database import Base, engine, get_db
 from schemas import UserCreate
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
-from utils import SECRET_KEY, ALGORITHM
+from utils import decode_access_token, SECRET_KEY, ALGORITHM
 
 # Создание таблиц
 Base.metadata.create_all(bind=engine)
@@ -39,9 +39,16 @@ def get_current_user(request: Request):
 
 @app.get("/home", response_class=HTMLResponse)
 def home_page(request: Request):
-    """Домашняя страница доступна всем."""
-    user = get_current_user(request)
-    return templates.TemplateResponse("index.html", {"request": request, "user": user})
+    """Рендеринг домашней страницы."""
+    token = request.cookies.get("access_token")
+    user_name = None
+    if token:
+        try:
+            payload = decode_access_token(token)
+            user_name = payload.get("full_name")
+        except HTTPException:
+            pass
+    return templates.TemplateResponse("index.html", {"request": request, "user_name": user_name})
 
 
 @app.get("/register_page", response_class=HTMLResponse)
@@ -55,6 +62,12 @@ def login_page(request: Request):
     """Страница входа."""
     return templates.TemplateResponse("login.html", {"request": request})
 
+@app.post("/logout")
+def logout():
+    """Выход из аккаунта."""
+    response = RedirectResponse(url="/home", status_code=303)
+    response.delete_cookie("access_token")
+    return response
 
 @app.get("/products", response_class=HTMLResponse)
 def products_page(request: Request):
