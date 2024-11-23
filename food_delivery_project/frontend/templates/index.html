@@ -11,9 +11,19 @@
         <h1>Food Delivery</h1>
         <nav>
             <ul>
-                <li><a href="http://127.0.0.1:8000/login_page">Login</a></li>
-                <li><a href="http://127.0.0.1:8000/register_page">Register</a></li>
+                <li><a href="/home">Home</a></li>
                 <li><a href="/products">Products</a></li>
+                <li id="auth-section">
+                    {% if user_name %}
+                        <span>Welcome, {{ user_name }}!</span>
+                        <form action="/logout" method="post" style="display: inline;">
+                            <button type="submit">Logout</button>
+                        </form>
+                    {% else %}
+                        <a href="/login_page">Login</a> | 
+                        <a href="/register_page">Register</a>
+                    {% endif %}
+                </li>
             </ul>
         </nav>
     </header>
